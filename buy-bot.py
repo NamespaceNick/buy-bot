@@ -53,9 +53,10 @@ def acquire_target_button(data_test_value):
     )
     return button_to_return
 
+
 # Handles login popup for website
 # DEPRECATED - Now loading session cookies
-def handle_login_popup(driver)
+def handle_login_popup(driver):
     username_field_element = WebDriverWait(driver, 10).until(
         lambda driver: driver.find_element_by_id("username")
     )
