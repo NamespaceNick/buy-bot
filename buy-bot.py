@@ -76,13 +76,17 @@ def handle_login_popup(driver):
     login_button_element.click()
 
 
+def initialize_driver():
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-gpu")
+    return webdriver.Chrome(options=chrome_options)
+
+
 # Start browser with default login info
 start_time = time.time()
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-extensions")
-chrome_options.add_argument("--disable-gpu")
-driver = webdriver.Chrome(options=chrome_options)
+driver = initialize_driver()
 # Initialize window on right side of screen
 # driver.set_window_position(1280, 0)
 driver.get(PRODUCT_URL)
