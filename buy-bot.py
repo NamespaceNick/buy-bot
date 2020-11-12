@@ -120,8 +120,8 @@ driver.get(PRODUCT_URL)
 open(LOGFILE, "w").close()
 
 try:
-    load_cookie(driver, COOKIE_FILE)
-    log("Cookie loaded")
+    # load_cookie(driver, COOKIE_FILE)
+    # log("Cookie loaded")
     # Find the pickup button
     pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
     while pickup_button is None:
@@ -148,6 +148,9 @@ try:
     checkout_button = acquire_target_button("checkout-button")
     checkout_button.click()
     log("Selected 'Checkout'")
+
+    handle_login_popup(driver)
+    log("Handled login popup")
 
     # TODO: Check to make sure there wasn't an error
     # Order item
