@@ -8,6 +8,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
+from selenium.common.exceptions import TimeoutException
 
 from dotenv import load_dotenv
 
@@ -47,7 +48,10 @@ def acquire_target_button(data_test_value):
     button_present = presence_of_element_located(
         (By.XPATH, f"//*[@data-test='{data_test_value}']")
     )
-    WebDriverWait(driver, 10).until(button_present)
+    try:
+        WebDriverWait(driver, 10).until(button_present)
+    except TimeoutException:
+        return None
     button_to_return = driver.find_element_by_xpath(
         f"//*[@data-test='{data_test_value}']"
     )
@@ -76,42 +80,59 @@ def handle_login_popup(driver):
     login_button_element.click()
 
 
-def initialize_driver():
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--disable-gpu")
-    return webdriver.Chrome(options=chrome_options)
+def initialize_driver(headless: bool = True):
+    if headless:
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-gpu")
+        return webdriver.Chrome(options=chrome_options)
+    else:
+        driver = webdriver.Chrome()
+        driver.set_window_position(1280, 0)
+        return driver
+
+
+# Finds & presses the "Place Order" button on the webpage
+def place_order():
+    place_order_button = acquire_target_button("placeOrderButton")
+    place_order_button.click()
 
 
 # Start browser with default login info
 start_time = time.time()
-driver = initialize_driver()
+driver = initialize_driver(headless=False)
 # Initialize window on right side of screen
-# driver.set_window_position(1280, 0)
 driver.get(PRODUCT_URL)
 
 try:
     load_cookie(driver, COOKIE_FILE)
     # Find the pickup button
-    pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
+    pickup_button = None
+    while pickup_button is None:
+        driver.refresh()
+        print("Pickup button was none")
+        pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
 
+    # TODO: Send message that item is available
     pickup_button.click()
 
     # Go to cart
     driver.get(CART_URL)
 
-    # TODO: Checkout
+    # Checkout
     checkout_button = acquire_target_button("checkout-button")
     checkout_button.click()
 
+    place_order()
     # Order item
-    # place_order_button = acquire_target_button("placeOrderButton")
-    # place_order_button.click()
-    # wait_here()
+    # TODO: End execution once item is purchased
+    # TODO: Send message to indicate successful purchase of item
+    wait_here()
 
 except:
     driver.close()
+    print("Driver was successfully closed.")
     raise
 
 end_time = time.time()
