@@ -128,7 +128,7 @@ try:
     # Order item
     # TODO: End execution once item is purchased
     # TODO: Send message to indicate successful purchase of item
-    wait_here()
+    # wait_here()
 
 except:
     driver.close()
