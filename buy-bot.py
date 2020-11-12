@@ -13,12 +13,14 @@ from selenium.common.exceptions import TimeoutException
 from dotenv import load_dotenv
 
 import pickle
+import ezgmail
 
 load_dotenv()
 PICKUP_BUTTON_NAME = "orderPickupButton"
 CART_URL = os.getenv("CART_URL")
 PRODUCT_URL = os.getenv("PRODUCT_URL")
 COOKIE_FILE = os.getenv("COOKIEFILE")
+TARGET_EMAIL = os.getenv("TARGET_EMAIL")
 username = os.getenv("USERNAME")
 passwd = os.getenv("PASSWD")
 
@@ -106,6 +108,7 @@ driver = initialize_driver(headless=False)
 driver.get(PRODUCT_URL)
 
 try:
+    print("Text message sent")
     load_cookie(driver, COOKIE_FILE)
     # Find the pickup button
     pickup_button = None
@@ -114,7 +117,14 @@ try:
         print("Pickup button was none")
         pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
 
-    # TODO: Send message that item is available
+    # Send message that item is available
+    ezgmail.send(
+        TARGET_EMAIL,
+        "Item has become available!",
+        "The item you have been waiting for has become available!",
+    )
+
+    # Add item to cart
     pickup_button.click()
 
     # Go to cart
@@ -124,10 +134,16 @@ try:
     checkout_button = acquire_target_button("checkout-button")
     checkout_button.click()
 
-    place_order()
+    # TODO: Check to make sure there wasn't an error
     # Order item
-    # TODO: End execution once item is purchased
-    # TODO: Send message to indicate successful purchase of item
+    # place_order()
+
+    # Send message to indicate successful purchase of item
+    ezgmail.send(
+        TARGET_EMAIL,
+        "[SUCCESS] Item successfully purchased!",
+        "The item you were waiting for has been purchased for you!",
+    )
     # wait_here()
 
 except:

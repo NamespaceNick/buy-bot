@@ -1,6 +1,8 @@
 # Custom additions
 TODO.md
 *.swp
+credentials.json
+token.json
 
 
 
