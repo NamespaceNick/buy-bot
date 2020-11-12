@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # My program to purchase a specific item on a website
 import os
+import sys
 import time
+import datetime
+import traceback
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -16,6 +19,7 @@ import pickle
 import ezgmail
 
 load_dotenv()
+LOGFILE = os.getenv("LOGFILE")
 PICKUP_BUTTON_NAME = "orderPickupButton"
 CART_URL = os.getenv("CART_URL")
 PRODUCT_URL = os.getenv("PRODUCT_URL")
@@ -37,6 +41,12 @@ def load_cookie(driver, path):
         cookies = pickle.load(cookiesfile)
         for cookie in cookies:
             driver.add_cookie(cookie)
+
+
+# Logs error in logfile
+def log(message):
+    with open(LOGFILE, "a") as logfile:
+        logfile.write(f"{message}\n\n\n")
 
 
 # For debugging purposes. Pauses execution until arbitrary input is sent
@@ -102,22 +112,24 @@ def place_order():
 
 
 # Start browser with default login info
-start_time = time.time()
-driver = initialize_driver(headless=False)
+driver = initialize_driver(headless=True)
 # Initialize window on right side of screen
 driver.get(PRODUCT_URL)
 
+# Erase existing logfile
+open(LOGFILE, "w").close()
+
 try:
-    print("Text message sent")
     load_cookie(driver, COOKIE_FILE)
+    log("Cookie loaded")
     # Find the pickup button
-    pickup_button = None
+    pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
     while pickup_button is None:
         driver.refresh()
-        print("Pickup button was none")
         pickup_button = acquire_target_button(PICKUP_BUTTON_NAME)
 
     # Send message that item is available
+    log(f"Item became available at {datetime.datetime.now().time()}")
     ezgmail.send(
         TARGET_EMAIL,
         "Item has become available!",
@@ -126,17 +138,21 @@ try:
 
     # Add item to cart
     pickup_button.click()
+    log("Clicked pickup button")
 
     # Go to cart
     driver.get(CART_URL)
+    log("Navigated to cart")
 
     # Checkout
     checkout_button = acquire_target_button("checkout-button")
     checkout_button.click()
+    log("Selected 'Checkout'")
 
     # TODO: Check to make sure there wasn't an error
     # Order item
-    # place_order()
+    place_order()
+    log("Order successfully placed. Yay!")
 
     # Send message to indicate successful purchase of item
     ezgmail.send(
@@ -147,10 +163,13 @@ try:
     # wait_here()
 
 except:
+    log(f"===AN ERROR OCCURRED===\n\n{traceback.format_exc()}")
+    ezgmail.send(
+        TARGET_EMAIL,
+        "[FAILURE] Item purchase failed",
+        "An error occured during script execution. Your purchase most likely failed",
+    )
     driver.close()
-    print("Driver was successfully closed.")
     raise
 
-end_time = time.time()
-print(f"Time elapsed: {end_time - start_time}")
 driver.close()
